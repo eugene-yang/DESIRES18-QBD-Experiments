@@ -8,22 +8,37 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 
 def args():
     parser = argparse.ArgumentParser(description='Generating vector file for sklearn experiments')
-    parser.add_argument('ingested_text_file', type=str)
-    parser.add_argument('output_file', type=str)
+    parser.add_argument('ingested_text_file', type=str,
+                        help='Ingested .csv file created by `helper.py ingested`')
+    parser.add_argument('output_file', type=str,
+                        help='Output file name (.pkl)')
 
-    sps = parser.add_subparsers(dest='style')
-    parser_tfidf = sps.add_parser('tfidf')
-    parser_tfidf.add_argument('--norm', choices=['l2', 'l1', 'None'], default='l2')
-    parser_tfidf.add_argument('--sublinear_tf', action='store_true', default=False)
-    parser_tfidf.add_argument('--use_idf', action='store_true', default=False)
-    parser_tfidf.add_argument('--smooth_idf', action='store_true', default=False)
+    sps = parser.add_subparsers(dest='style', help='Style of vector subcommand')
+    parser_tfidf = sps.add_parser('tfidf',
+                                  help='TFIDF, using `sklearn.feature_extraction.text.TfidfVectorer`')
+    parser_tfidf.add_argument('--norm', choices=['l2', 'l1', 'None'], default='l2',
+                              help='Vector normalization, default l2')
+    parser_tfidf.add_argument('--sublinear_tf', action='store_true', default=False,
+                              help='Using `1+log(tf)` as within document weight')
+    parser_tfidf.add_argument('--use_idf', action='store_true', default=False,
+                              help='Using idf')
+    parser_tfidf.add_argument('--smooth_idf', action='store_true', default=False,
+                              help='Using smoothed idf')
 
-    parser_bm25 = sps.add_parser('bm25')
-    parser_bm25.add_argument('--use_idf', action='store_true', default=False)
-    parser_bm25.add_argument('--smooth_idf', action='store_true', default=False)
-    parser_bm25.add_argument('--es_style_idf_smooth', action='store_true', default=False)
-    parser_bm25.add_argument('--k', type=float, default=1.2)
-    parser_bm25.add_argument('--b', type=float, default=0.75)
+    parser_bm25 = sps.add_parser('bm25',
+                                 help='BM25, using the BM25 implementation modified from the '
+                                      'TfidfVectorizer')
+    parser_bm25.add_argument('--use_idf', action='store_true', default=False,
+                             help='Using idf')
+    parser_bm25.add_argument('--smooth_idf', action='store_true', default=False,
+                             help='Using smoothed idf')
+    parser_bm25.add_argument('--es_style_idf_smooth', action='store_true', default=False,
+                             help='Using Elasticsearch-style idf smoothing instead of the '
+                                  'one implemented in sklearn')
+    parser_bm25.add_argument('--k', type=float, default=1.2,
+                             help='Parameter value of k1 in BM25, default 1.2')
+    parser_bm25.add_argument('--b', type=float, default=0.75,
+                             help='Parameter value of b in BM25, default 0.75')
 
     args = parser.parse_args()
 

@@ -112,25 +112,39 @@ def args():
     parser = argparse.ArgumentParser(description='Helper functions')
     sps = parser.add_subparsers(dest='cmd')
     
-    parser_ingest = sps.add_parser('ingest')
-    parser_ingest.add_argument('data_path', type=str)
-    parser_ingest.add_argument('output_path', type=str)
+    parser_ingest = sps.add_parser('ingest', 
+                                   help='Ingest the raw RCV1-v2 dataset '
+                                        'and output a .csv file.')
+    parser_ingest.add_argument('data_path', type=str,
+                               help='Path the the root directory of the dataset.')
+    parser_ingest.add_argument('output_path', type=str, help='Output file name (.csv)')
     parser_ingest.add_argument('--v2_did_list', type=str,
-                               default='RCV1-v2/v2dids.txt')
+                               default='RCV1-v2/v2dids.txt',
+                               help='File path to the .txt file containing the '
+                                    'did of the v2 collection. This file is already '
+                                    'included in the repository.')
     
-    parser_qrels = sps.add_parser('qrels')
-    parser_qrels.add_argument('data_path', type=str)
-    parser_qrels.add_argument('output_path', type=str)
-    parser_qrels.add_argument('raw_text_file', type=str)
-    parser_qrels.add_argument('--rel_threshold', type=int,
-                              default = 26)
+    parser_qrels = sps.add_parser('qrels', help='Parse .qrels file and create binary '
+                                                'mask file(.pkl) of relevant judgements.')
+    parser_qrels.add_argument('data_path', type=str, 
+                              help='Path to the directory containing all 3 .qrel files')
+    parser_qrels.add_argument('output_path', type=str, help='Output file name (.pkl)')
+    parser_qrels.add_argument('raw_text_file', type=str, 
+                              help='The ingested .csv file created by `helper.py ingest`')
+    parser_qrels.add_argument('--rel_threshold', type=int, default=26,
+                              help='Minimum number of relevant document of a category')
     
-    parser_samp = sps.add_parser('sample')
-    parser_samp.add_argument('rel_info_file', type=str)
-    parser_samp.add_argument('output_path', type=str)
-    parser_samp.add_argument('--num_sampled', type=int, default=25)
+    parser_samp = sps.add_parser('sample', 
+                                 help='Sample from the collection to create query document '
+                                      'of each category.')
+    parser_samp.add_argument('rel_info_file', type=str,
+                             help='The relevant mask file created by `helper.py qrels`')
+    parser_samp.add_argument('output_path', type=str, help='Output file name (.pkl)')
+    parser_samp.add_argument('--num_sampled', type=int, default=25,
+                             help='Number of query document per category.')
 
-    parser.add_argument('--silent', action='store_true', default=False)
+    parser.add_argument('--silent', action='store_true', default=False,
+                        help='Flag for not output status information')
 
     return parser.parse_args()
 

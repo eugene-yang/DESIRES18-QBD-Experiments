@@ -7,13 +7,20 @@ from elasticsearch import Elasticsearch
 
 from helpers import pbar
 
-def args():
-	parser = argparse.ArgumentParser(description='')
-	parser.add_argument('server', type=str)
-	parser.add_argument('raw_text', type=str, default="./raw_text.csv")
-	parser.add_argument('--dataset_name', type=str, default="rcv1")
-	parser.add_argument('--index_config', type=str, default="./es_config.json")
-	parser.add_argument('--es_bulk_max', type=int, default=1000)
+def parseArgs():
+	parser = argparse.ArgumentParser(description='Script for indexing the RCV1-v2 collection '
+												 'in Elasticsearch')
+	parser.add_argument('server', type=str, help='Path to the Elasticsearch server, including '
+												 'hostname/IP and port')
+	parser.add_argument('--raw_text', type=str, default="./raw_text.csv",
+						help='Ingested .csv file created by `helper.py ingested`')
+	parser.add_argument('--dataset_name', type=str, default="rcv1",
+						help='The name of the collection, would be the prefix of the indices')
+	parser.add_argument('--index_config', type=str, default="./es_config.json",
+						help='The .json config file of the indices, already included in the '
+							 'repository.')
+	parser.add_argument('--es_bulk_max', type=int, default=1000,
+						help='The maximum number of document passing to the server at once.')
 
 	return parser.parse_args()
 
@@ -33,7 +40,7 @@ def bulk_index_docs(es, name, gen, bulk_max):
 # vectorize all essential combinations
 
 def main():
-	args = args()
+	args = parseArgs()
 	
 	print("Reading dataset cache from %s..."%args.raw_text)
 	raw_text = pd.read_csv( args.raw_text )

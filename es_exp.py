@@ -13,24 +13,38 @@ from elasticsearch.helpers import scan
 
 from utils import logger
 
-parser = argparse.ArgumentParser(description='')
-parser.add_argument('server', type=str)
-parser.add_argument('index', type=str, help='remember to give full index name since there are different exp going on')
-parser.add_argument('type', choices=['mlt', 'query'])
+parser = argparse.ArgumentParser(description='Elasticserach experiment')
+parser.add_argument('server', type=str, help='Path to the Elasticsearch server, including '
+											 'hostname/IP and port')
+parser.add_argument('index', type=str, help='Name of index')
+parser.add_argument('type', choices=['mlt', 'sqs'], 
+					help='Type Elasticsearch query going to experiment. '
+						 'MLT query / SQS query')
 
 # parser.add_argument('--data_path', type=str, default="./raw_v2_dataset")
-parser.add_argument('--ingestes_text', type=str, default="raw_text.csv")
-parser.add_argument('--query_file', type=str, default="sampled_queries.pkl")
-parser.add_argument('--rel_file', type=str, default="rel_info.pkl")
-parser.add_argument('--output_dir', type=str, default='./results_es')
-parser.add_argument('--exp_name', type=str, default='es_mltvsquery')
-parser.add_argument('--type_prefix', type=str, default='')
-parser.add_argument('--worker', type=int, default=8)
+parser.add_argument('--ingestes_text', type=str, default="raw_text.csv",
+					help='Ingested .csv file created by `helper.py ingested`')
+parser.add_argument('--query_file', type=str, default="sampled_queries.pkl",
+					help='Query document .pkl file created by `helper.py sample`')
+parser.add_argument('--rel_file', type=str, default="rel_info.pkl",
+					help='Relevant binary mask .pkl file created by `helper.py qrels`')
+parser.add_argument('--output_dir', type=str, default='./results_es',
+					help='Output file directory. Will be created if not exist')
+parser.add_argument('--exp_name', type=str, default='es_mltvssqs',
+					help='The name of the experiment.')
+parser.add_argument('--type_prefix', type=str, default='',
+					help='The prefix of this experiment run.')
+parser.add_argument('--worker', type=int, default=4,
+					help='Number of multiprocess workers')
 
-parser.add_argument('--overwrite', action="store_true", default=False)
-parser.add_argument('--skipping_exist_cate', action="store_true", default=False)
+parser.add_argument('--overwrite', action="store_true", default=False,
+					help='Overwriting existed experiment, default False')
+parser.add_argument('--skip_exist_cate', action="store_true", default=False,
+					help='Skipping existed categories in this experiment run, '
+						 'default False.')
 
-parser.add_argument('--only_cate', type=str, default=None)
+parser.add_argument('--only_cate', type=str, default=None,
+					help='Run only this category')
 
 args = parser.parse_args()
 
@@ -42,7 +56,7 @@ output_dir = Path( args.output_dir ) / args.exp_name / \
 if output_dir.exists():
 	if args.overwrite:
 		warnings.warn("Experiment already exists, may overwrite")
-	elif args.skipping_exist_cate or args.only_cate is not None:
+	elif args.skip_exist_cate or args.only_cate is not None:
 		warnings.warn("Resuming experiment")
 	else:
 		raise Exception("experiment already exists")
@@ -85,7 +99,7 @@ def work(hashed, info):
 						}
 					}
 				}
-			elif args.type == 'query':
+			elif args.type == 'sqs':
 				esq = {
 					"stored_fields": [],
 					"query": {
@@ -142,7 +156,7 @@ def main():
 	work_ = partial(work, hashed_index)
 	if args.only_cate is not None:
 		exps = [ pair( args.only_cate ) ]
-	elif args.skipping_exist_cate:
+	elif args.skip_exist_cate:
 		exps = [ pair( cate ) for cate in queries.keys() if not ( output_dir / (cate + ".csv") ).exists() ]
 	else:
 		exps = [ pair( cate ) for cate in queries.keys() ]

@@ -17,27 +17,42 @@ __all_algos__ = ['lr', 'similarity', 'query', 'qtfraw', 'qbm25tf', 'qlogtf']
 __all_weighings__ = ['size_inverse', 'noweights', 'noblind', 'noblindwidf', 'na']
 
 parser = argparse.ArgumentParser(description='Sklearn experiments')
-parser.add_argument('dataset', type=str)
-parser.add_argument('topic', type=str)
-parser.add_argument('feature_file', type=str)
+parser.add_argument('topic', type=str, help='Experimenting category')
+parser.add_argument('feature_file', type=str, 
+					help='The collection document representation. '
+					     'Vector file created by `vectorize.py`')
 
-parser.add_argument('--style', choices=['similarity', 'onehot', 'other'], default='similarity')
-parser.add_argument('--query_feature_file', type=str, default='')
-parser.add_argument('--rel_info_file', type=str, default='rel_info.pkl')
-parser.add_argument('--sampled_query_file', type=str, default='sampled_queries.pkl')
+parser.add_argument('style', choices=['similarity', 'onehot', 'other'], default='similarity',
+					help='Style of querying, aka the query document representation'
+						 '`Similarity` would make the query document having the same '
+						 'representation as the collection documents; '
+						 '`Onehot` would make query document having one hot encoding of the terms; '
+						 '`Other` would require to specified the alternative vector file')
+parser.add_argument('--query_feature_file', type=str, default='',
+					help='Required if `--style=other`. The alternative representation of the '
+						  'query documents. Vector file created by `vectorize.py`')
+parser.add_argument('--rel_info_file', type=str, default='rel_info.pkl',
+					help='Relevant binary mask .pkl file created by `helper.py qrels`')
+parser.add_argument('--sampled_query_file', type=str, default='sampled_queries.pkl',
+					help='Query document .pkl file created by `helper.py sample`')
 
-parser.add_argument('--trials', type=int, default=25)
-parser.add_argument('--out_dir', type=str, default='./results')
-parser.add_argument('--prefix', type=str, default='')
-parser.add_argument('--exp_name', type=str, default='sklearn_exp')
+parser.add_argument('--trials', type=int, default=25,
+					help='Number of query document being experimented. Should be the same as'
+						 'the number of query documenty in `sample_query_file`.')
+parser.add_argument('--out_dir', type=str, default='./results',
+					help='Output file directory. Will be created if not exist')
+parser.add_argument('--prefix', type=str, default='',
+					help='The prefix of this experiment run.')
+parser.add_argument('--exp_name', type=str, default='sklearn_exp',
+					help='The name of the experiment.')
 
-parser.add_argument('--residual', action='store_true', default=False)
-parser.add_argument('--overwrite', action='store_true', default=False)
+parser.add_argument('--residual', action='store_true', default=False,
+					help='The flag for using residual effectiveness. Please always set it '
+						 'to True!')
+parser.add_argument('--overwrite', action='store_true', default=False,
+					help='Overwriting the existed experiment')
 
 args = parser.parse_args()
-
-
-dataset_dir = Path(args.dataset)
 
 output_name = ( args.prefix + ("_" if args.prefix != "" else "") + args.topic )
 
@@ -81,7 +96,8 @@ def main():
 
 	print("[exp] Running on %s"%args.topic)
 
-	json.dump( {**vars(args), "machine": socket.gethostname(), "script": __file__}, (output_dir / "arguments.json").open("w") )
+	json.dump( {**vars(args), "machine": socket.gethostname(), "script": __file__}, 
+			   (output_dir / "arguments.json").open("w") )
 	
 	queries = pd.read_pickle( args.sampled_query_file )[ args.topic ].tolist()
 	X = pd.read_pickle( args.feature_file )[ 'vec' ]
@@ -105,14 +121,10 @@ def main():
 	for query in queries[:args.trials]:
 		print("[exp] %s set #%d as query"%(args.topic, query))
 
-		# Q = X[query]
 		Y_pseudo = np.zeros( Y.shape[0] )
 		Y_pseudo[ query ] = 1
-		
-		# use logistic regression
 
 		model_time = time.time()
-		
 		if args.style == 'similarity':
 			sim = np.asarray( (X * X[query].transpose()).todense() ).transpose()[0]
 		elif args.style == 'onehot':
@@ -120,8 +132,8 @@ def main():
 		else: # other
 			sim = np.asarray( (X * X_query[query].transpose()).todense() ).transpose()[0]
 		
-
-		rank = pd.DataFrame({"sim": sim, "hashed": hashed_index}).sort_values(["sim", "hashed"], ascending=False).index
+		rank = pd.DataFrame({"sim": sim, "hashed": hashed_index})\
+				 .sort_values(["sim", "hashed"], ascending=False).index
 		# rank = np.argsort(sim)[::-1]
 		meta['time'].append( time.time() - model_time )
 		sims.append(sim)

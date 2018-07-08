@@ -11,12 +11,15 @@ from elasticsearch.helpers import scan
 
 from helpers import pbar
 
-parser = argparse.ArgumentParser(description='')
-parser.add_argument('server', type=str)
-parser.add_argument('index', type=str)
-parser.add_argument('output_name', type=str)
+parser = argparse.ArgumentParser(description='Dump Elasticsearch index as a document-term '
+									   'sparse matrix that can be used in `sklearn_exp.py`')
+parser.add_argument('server', type=str, help='Path to the Elasticsearch server, including '
+											 'hostname/IP and port')
+parser.add_argument('index', type=str, help='Name of the Elasticsearch index to be dumped.')
+parser.add_argument('output_name', type=str, help='Output file name (.pkl)')
 
-parser.add_argument('--ingested_text', type=str, default="./raw_text.csv")
+parser.add_argument('--ingested_text', type=str, default="./raw_text.csv",
+					help='The ingested .csv file created by `helper.py ingest`')
 
 args = parser.parse_args()
 
@@ -38,7 +41,8 @@ if __name__ == '__main__':
 	for i in pbar(raw_text_index.shape[0])(raw_text_index):
 		d = es.termvectors(index=args.index, doc_type='document', id=i, fields='raw')
 		vocab |= set( d['term_vectors']['raw']['terms'].keys() )
-		doc_terms.append({ v: d['term_vectors']['raw']['terms'][v]['term_freq'] for v in d['term_vectors']['raw']['terms'] })
+		doc_terms.append({ v: d['term_vectors']['raw']['terms'][v]['term_freq'] 
+							for v in d['term_vectors']['raw']['terms'] })
 
 	vocab = sorted(list(vocab))
 
