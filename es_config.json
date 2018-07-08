@@ -1,0 +1,56 @@
+{
+    "settings": {
+        "index": {
+            "number_of_replicas": 0,
+            "number_of_shards": 1,
+            "max_result_window" : 1000000
+        },
+        "analysis": {
+            "analyzer": {
+                "my_analyzer": {
+                    "type": "custom",
+                    "tokenizer": "standard",
+                    "filter": [
+                        "lowercase",
+                        "apostrophe"
+                    ]
+                }
+            }
+        },
+        "similarity" : {
+            "my_bm25" : {
+                "type" : "BM25",
+                "k1": 1.2,
+                "b": 0.75
+            },
+            "my_lmds" : {
+                "type" : "LMDirichlet",
+                "mu": 2000
+            },
+            "my_lmjm" : {
+                "type": "LMJelinekMercer",
+                "lambda": 0.7
+            }
+        }
+    },
+    "mappings": {
+        "document": {
+            "properties": {
+                "filepath": {
+                    "type": "text",
+                    "fielddata": true
+                },
+                "did": {
+                    "type": "integer"
+                },
+                "raw": {
+                    "type": "text",
+                    "store": true,
+                    "similarity": "scripted_bm25",
+                    "analyzer": "my_analyzer",
+                    "search_analyzer": "my_analyzer"
+                }
+            }
+        }
+    }
+}
