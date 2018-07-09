@@ -23,7 +23,7 @@ All experiments will make use of the output files from the following three comma
 3. Create query document by sampling from the relevant documents of each category
    `python helpers.py sample {output file from 2} {output filename}`
 
-###Elasticsearch Experiment
+### Elasticsearch Experiment
 
 1. Index the collection in Elasticsearch 
    `python es_indexing.py {Elasticsearch server} `
